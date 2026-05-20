@@ -226,3 +226,5 @@ data/raw/*.csv
 data/processed/*.csv
 models/*.pkl
 .DS_Store
+
+./notebooks/.ipynb_checkpoints/
