@@ -227,4 +227,4 @@ data/processed/*.csv
 models/*.pkl
 .DS_Store
 
-./notebooks/.ipynb_checkpoints/
+./learning_notebooks/.ipynb_checkpoints/
