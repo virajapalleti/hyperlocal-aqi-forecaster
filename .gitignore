@@ -234,3 +234,6 @@ data/processed/
 
 !data/sample/
 !data/sample/*.csv
+
+data/processed/plots/*.png
+*.ipynb
