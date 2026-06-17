@@ -236,4 +236,3 @@ data/processed/
 !data/sample/*.csv
 
 data/processed/plots/*.png
-*.ipynb
