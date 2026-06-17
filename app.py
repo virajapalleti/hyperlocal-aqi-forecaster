@@ -1,12 +1,15 @@
-from dash import Dash, html, dcc
+from dash import Dash, html, dcc, Input, Output
 import plotly.graph_objects as go
+import pandas as pd
 
-# 3 stations:
-STATIONS = [
-    "Anand Vihar, New Delhi - DPCC",
-    "R K Puram, Delhi - DPCC",
-    "Punjabi Bagh, Delhi - DPCC",
-]
+from src.aqi_utils import pm25_to_category
+
+#loading data
+predictions = pd.read_csv("data/processed/dashboard_predictions.csv")
+predictions["hour_utc"] = pd.to_datetime(predictions["hour_utc"], utc=True)
+
+# Stations come from the data itself instead of a hardcoded lisyt now
+STATIONS = sorted(predictions["location_name"].unique().tolist())
 
 #creatign the app now, render will use exposed server later for deployment
 app = Dash(__name__)
@@ -34,10 +37,57 @@ app.layout = html.Div(
             options=[{"label": s, "value": s} for s in STATIONS],
             value=STATIONS[0],   # default selection
         ),
+        html.Div(id="health-alert", style={"margin": "16px 0", "padding": "16px","borderRadius": "8px", "color": "white"}),
+    
 
         dcc.Graph(id="forecast-chart", figure=placeholder_fig),
     ],
 )
+
+# ---- CALLBACK: when station changes, redraw the chart ----
+@app.callback(
+    Output("forecast-chart", "figure"),
+    Output("health-alert", "children"),
+    Output("health-alert", "style"),
+    Input("station-dropdown", "value"),
+)
+def update_chart(selected_station):
+    dff = predictions[predictions["location_name"] == selected_station].sort_values("hour_utc")
+
+    # ---- chart (same as before) ----
+    fig = go.Figure()
+    fig.add_trace(go.Scatter(x=dff["hour_utc"], y=dff["actual_pm25"],
+                             mode="lines", name="Actual PM2.5", line=dict(color="black")))
+    fig.add_trace(go.Scatter(x=dff["hour_utc"], y=dff["predicted_pm25"],
+                             mode="lines", name="Predicted PM2.5", line=dict(color="royalblue")))
+    fig.update_layout(title=f"24h-ahead PM2.5 — {selected_station}",
+                      xaxis_title="Time (UTC)", yaxis_title="PM2.5 (µg/m³)",
+                      legend=dict(orientation="h", y=1.1))
+
+    # ---- health alert ----
+    latest_pred = round(dff["predicted_pm25"].iloc[-1])
+    latest_time = dff["hour_utc"].iloc[-1]
+    category, color, message = pm25_to_category(latest_pred)
+
+    # Worst (highest) predicted value across the test window
+    peak_pred = dff["predicted_pm25"].max()
+    peak_category, _, _ = pm25_to_category(peak_pred)
+
+    alert_text = html.Div([
+        html.Strong(f"Forecast for {latest_time:%d %b %Y %H:%M} UTC: "
+                    f"{latest_pred:.0f} µg/m³ — {category}"),
+        html.Br(),
+        html.Span(message),
+        html.Br(),
+        html.Small(f"Peak forecast in test window: {peak_pred:.0f} µg/m³ — {peak_category}",
+                   style={"opacity": 0.85}),
+    ])
+
+    alert_style = {"margin": "16px 0", "padding": "16px",
+                   "borderRadius": "8px", "color": "white",
+                   "backgroundColor": color}
+
+    return fig, alert_text, alert_style
 
 #run:
 if __name__ == "__main__":
