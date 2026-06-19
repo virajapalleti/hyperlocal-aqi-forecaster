@@ -10,6 +10,25 @@ predictions["hour_utc"] = pd.to_datetime(predictions["hour_utc"], utc=True)
 
 # Stations come from the data itself instead of a hardcoded lisyt now
 STATIONS = sorted(predictions["location_name"].unique().tolist())
+STATION_COORDS = {
+    "Anand Vihar, New Delhi - DPCC": (28.6469, 77.3160),
+    "R K Puram, Delhi - DPCC":       (28.5631, 77.1869),
+    "Punjabi Bagh, Delhi - DPCC":    (28.6742, 77.1310),
+}
+
+def build_station_summary():
+    rows = []
+    for station in STATIONS:
+        dff = predictions[predictions["location_name"] == station].sort_values("hour_utc")
+        latest = round(dff["predicted_pm25"].max())
+        category, color, _ = pm25_to_category(latest)
+        lat, lon = STATION_COORDS[station]
+        rows.append({"station": station, "lat": lat, "lon": lon,
+                     "peak_pred": latest, "category": category, "color": color})
+    return pd.DataFrame(rows)
+
+station_summary = build_station_summary()
+# print(station_summary)
 
 #creatign the app now, render will use exposed server later for deployment
 app = Dash(__name__)
