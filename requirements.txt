@@ -4,3 +4,8 @@ requests
 jupyter
 ipykernel
 python-dotenv
+
+dash
+plotly
+pandas
+gunicorn
