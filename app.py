@@ -28,6 +28,30 @@ def build_station_summary():
     return pd.DataFrame(rows)
 
 station_summary = build_station_summary()
+
+import plotly.express as px
+
+def build_map_figure():
+    fig = px.scatter_mapbox(
+        station_summary,
+        lat="lat", lon="lon",
+        color="category",
+        color_discrete_map=dict(zip(station_summary["category"], station_summary["color"])),
+        hover_name="station",
+        hover_data={"peak_pred": True, "category": True, "lat": False, "lon": False},
+        size_max=20,
+        zoom=10,
+        height=450,
+    )
+    fig.update_traces(marker=dict(size=22, opacity=1.0))
+    fig.update_layout(
+        mapbox_style="open-street-map",   # free, no API key needed
+        margin=dict(l=0, r=0, t=0, b=0),
+        legend=dict(title="AQI category"),
+    )
+    return fig
+
+map_figure = build_map_figure()
 # print(station_summary)
 
 #creatign the app now, render will use exposed server later for deployment
@@ -49,6 +73,10 @@ app.layout = html.Div(
     children=[
         html.H1("Hyperlocal AQI Forecaster — Delhi"),
         html.P("24-hour PM2.5 forecast by monitoring station."),
+
+        dcc.Graph(id="delhi-map", figure=map_figure),
+
+        html.Hr(),
 
         html.Label("Select a station:"),
         dcc.Dropdown(
