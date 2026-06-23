@@ -230,7 +230,6 @@ models/*.pkl
 learning_notebooks/.ipynb_checkpoints/
 
 data/raw/
-data/processed/
 
 data/processed/*.csv
 !data/processed/dashboard_predictions.csv

@@ -1,9 +1,3 @@
-pandas
-numpy
-requests
-jupyter
-ipykernel
-python-dotenv
 
 dash
 plotly
